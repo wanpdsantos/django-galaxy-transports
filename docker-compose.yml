@@ -1,0 +1,35 @@
+version: '3.9'
+
+services:
+  web:
+    build:
+      context: ./django
+    volumes:
+      - static_data:/backend/vol/web
+    expose:
+     - 8000
+    env_file:
+      - appVariables.env
+    depends_on:
+      - appDatabase
+  
+  nginx:
+    build:
+      context: ./nginx
+    volumes:
+      - static_data:/vol/static
+    ports:
+      - "8080:8080"
+    depends_on:
+      - web
+
+  appDatabase:
+    image: postgres:14-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    env_file:
+      - appVariables.env
+      
+volumes:
+  static_data:
+  postgres_data:
