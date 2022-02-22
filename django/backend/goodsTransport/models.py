@@ -8,7 +8,7 @@ PLANETS = [
   ('DEMETER','Demeter'),
 ]
 class Pilot(models.Model):
-  pilotCertification = models.CharField(max_length=7, primary_key=True)
+  pilotCertification = models.CharField(max_length=7, blank=False, null=False, unique=True)
   name = models.CharField(max_length=100, blank=False, null=False)
   age = models.IntegerField(validators=[validate_age], blank=False, null=False)
   credits = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)

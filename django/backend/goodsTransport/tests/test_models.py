@@ -4,10 +4,10 @@ from .factories import *
 
 class PilotTest(TestCase):
   def setUp(self):
-    self.userAdult = PilotFactory()
+    self.pilot = PilotFactory()
     
   def test_newPilot(self):
-    self.assertIsInstance(self.userAdult, Pilot)
+    self.assertIsInstance(self.pilot, Pilot)
     self.assertTrue(Pilot.objects.all().count() == 1)
 
 class ShipTest(TestCase):
