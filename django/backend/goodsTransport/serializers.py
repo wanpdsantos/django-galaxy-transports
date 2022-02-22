@@ -1,4 +1,4 @@
-from goodsTransport.models import Pilot, Ship
+from goodsTransport.models import Pilot, Ship, Contract
 from rest_framework import serializers
 
 class PilotSerializer(serializers.HyperlinkedModelSerializer):
@@ -39,3 +39,8 @@ class ShipSerializer(serializers.HyperlinkedModelSerializer):
     if weightCapacity < 0:
       raise serializers.ValidationError('Weight capacity cannot be negative.')
     return weightCapacity
+
+class ContractSerializer(serializers.HyperlinkedModelSerializer):
+  class Meta:
+    model = Contract
+    fields = '__all__'
