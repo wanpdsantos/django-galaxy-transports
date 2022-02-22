@@ -20,6 +20,11 @@ class ShipSerializer(serializers.HyperlinkedModelSerializer):
     model = Ship
     fields = '__all__'
   
+  def validate(self, data):
+    if data['fuelLevel'] > data['fuelCapacity']:
+      raise serializers.ValidationError('Max fuel level reached.')
+    return data
+
   def validate_fuelCapacity(self, fuelCapacity):
     if fuelCapacity < 0:
       raise serializers.ValidationError('Fuel capacity cannot be negative.')
