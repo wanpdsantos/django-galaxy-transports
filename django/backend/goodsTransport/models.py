@@ -13,4 +13,12 @@ class Ship(models.Model):
   fuelLevel = models.DecimalField(max_digits=12, decimal_places=2, blank=False, null=False)
   weightCapacity = models.DecimalField(max_digits=12, decimal_places=2, blank=False, null=False)
 
+class Resource(models.Model):
+  RESOURCES = [
+    ('WATER', 'Water'),
+    ('MINERALS', 'Minerals'),
+    ('FOOD', 'Food'),
+  ]
+  name = models.CharField(max_length=10, choices=RESOURCES)
+  weight = models.DecimalField(max_digits=12, decimal_places=2, blank=False, null=False)
   

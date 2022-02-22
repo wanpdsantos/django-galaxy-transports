@@ -15,3 +15,10 @@ class ShipFactory(factory.django.DjangoModelFactory ):
   fuelCapacity = 10
   fuelLevel = 5
   weightCapacity = 10
+
+class ResourceFactory(factory.django.DjangoModelFactory ):
+  class Meta:
+    model = Resource
+  
+  name='Food'
+  weight=10.59

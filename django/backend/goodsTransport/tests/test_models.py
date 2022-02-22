@@ -17,3 +17,11 @@ class ShipTest(TestCase):
   def test_newShip(self):
     self.assertIsInstance(self.ship, Ship)
     self.assertTrue(Ship.objects.all().count() == 1)
+
+class ResourceTest(TestCase):
+  def setUp(self):
+    self.resource = ResourceFactory()
+    
+  def test_newResource(self):
+    self.assertIsInstance(self.resource, Resource)
+    self.assertTrue(Resource.objects.all().count() == 1)
