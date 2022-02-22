@@ -7,5 +7,10 @@ class Pilot(models.Model):
   age = models.IntegerField(validators=[validate_age], blank=False, null=False)
   credits = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
   locationPlanet = models.CharField(max_length=100, blank=True, null=True)
-      
+
+class Ship(models.Model):
+  fuelCapacity = models.DecimalField(max_digits=12, decimal_places=2, blank=False, null=False)
+  fuelLevel = models.DecimalField(max_digits=12, decimal_places=2, blank=False, null=False)
+  weightCapacity = models.DecimalField(max_digits=12, decimal_places=2, blank=False, null=False)
+
   
