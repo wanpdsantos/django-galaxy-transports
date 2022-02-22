@@ -22,3 +22,11 @@ class ResourceFactory(factory.django.DjangoModelFactory ):
   
   name='Food'
   weight=10.59
+
+class ContractFactory(factory.django.DjangoModelFactory ):
+  class Meta:
+    model = Contract
+  
+  originPlanet = 'Calas'
+  destinationPlanet = 'Andvari'
+  value = 15.5

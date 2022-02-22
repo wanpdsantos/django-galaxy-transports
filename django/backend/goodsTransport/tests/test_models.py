@@ -20,8 +20,17 @@ class ShipTest(TestCase):
 
 class ResourceTest(TestCase):
   def setUp(self):
-    self.resource = ResourceFactory()
+    contract = ContractFactory()
+    self.resource = ResourceFactory(contract = contract)
     
   def test_newResource(self):
     self.assertIsInstance(self.resource, Resource)
     self.assertTrue(Resource.objects.all().count() == 1)
+
+class ContractTest(TestCase):
+  def setUp(self):
+    self.contract = ContractFactory()
+    
+  def test_newContract(self):
+    self.assertIsInstance(self.contract, Contract)
+    self.assertTrue(Contract.objects.all().count() == 1)
