@@ -19,11 +19,8 @@ class Ship(models.Model):
   fuelLevel = models.DecimalField(max_digits=12, decimal_places=2, blank=False, null=False)
   weightCapacity = models.DecimalField(max_digits=12, decimal_places=2, blank=False, null=False)
 
-class Contract(models.Model):
-  description = models.CharField(max_length=200, blank=True, null=True)
-  originPlanet = models.CharField(choices=PLANETS, max_length=10, blank=False, null=False)
-  destinationPlanet = models.CharField(choices=PLANETS, max_length=10, blank=False, null=False)
-  value = models.DecimalField(max_digits=12, decimal_places=2, blank=False, null=False)
+class ResourceList(models.Model):
+  id = models.BigAutoField(primary_key=True)
 
 class Resource(models.Model):
   RESOURCES = [
@@ -33,5 +30,21 @@ class Resource(models.Model):
   ]
   name = models.CharField(max_length=10, choices=RESOURCES)
   weight = models.DecimalField(max_digits=12, decimal_places=2, blank=False, null=False)
-  contract = models.ForeignKey(Contract, on_delete=models.CASCADE, blank=False, null=False)
+  list = models.ForeignKey(ResourceList, on_delete=models.CASCADE, blank=False, null=False)
+
+class Contract(models.Model):
+  description = models.CharField(max_length=200, blank=True, null=True)
+  originPlanet = models.CharField(choices=PLANETS, max_length=10, blank=False, null=False)
+  destinationPlanet = models.CharField(choices=PLANETS, max_length=10, blank=False, null=False)
+  value = models.DecimalField(max_digits=12, decimal_places=2, blank=False, null=False)
+  payload = models.ForeignKey(ResourceList, on_delete=models.CASCADE, blank=False, null=False)
+
+
+
+
+
+
+
+
+
   

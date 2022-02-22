@@ -1,7 +1,7 @@
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
-from goodsTransport.models import Pilot, Ship
+from goodsTransport.models import Pilot, Ship, Contract, ResourceList
 
 class PilotViewSetTest(APITestCase):
   def setUp(self):
@@ -148,4 +148,53 @@ class ShipViewSetTest(APITestCase):
     )
     self.assertEqual(shipApi.status_code, status.HTTP_400_BAD_REQUEST)
 
+class ContractViewSetTest(APITestCase):
+  def setUp(self):
+    self.resourceList = ResourceList.objects.create()
+    self.contract = Contract.objects.create(
+      description = '123',
+      originPlanet = 'CALAS',
+      destinationPlanet = 'CALAS',
+      value = 20.25,
+      payload = self.resourceList
+    )
+    self.contractOk = {
+      'description': 'TestDescription',
+      'originPlanet': 'CALAS',
+      'destinationPlanet': 'CALAS',
+      'value': 20.25,
+      'payload': []
+    }
+    self.contractNegativeResourceWeight = {
+      'description': 'TestDescription',
+      'originPlanet': 'CALAS',
+      'destinationPlanet': 'CALAS',
+      'value': 20.25,
+      'payload': [{'name':'WATER', 'weight': -20}]
+    }
 
+    self.url_contract_list = reverse('contract-list')
+
+  def test_get_contract_list(self):
+    contractApi = self.client.get(
+      self.url_contract_list,
+      format='json'
+    )
+    self.assertEqual(contractApi.status_code, status.HTTP_200_OK)
+    self.assertEqual(len(contractApi.json()), 1)
+
+  def test_create_contract(self):
+    contractApi = self.client.post(
+      self.url_contract_list,
+      self.contractOk,
+      format='json'
+    )
+    self.assertEqual(contractApi.status_code, status.HTTP_201_CREATED)
+
+  def test_create_contractNegativeWeight(self):
+    contractApi = self.client.post(
+      self.url_contract_list,
+      self.contractNegativeResourceWeight,
+      format='json'
+    )
+    self.assertEqual(contractApi.status_code, status.HTTP_400_BAD_REQUEST)

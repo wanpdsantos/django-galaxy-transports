@@ -1,4 +1,4 @@
-from goodsTransport.models import Pilot, Ship, Contract
+from goodsTransport.models import Pilot, Ship, Contract, Resource, ResourceList
 from rest_framework import serializers
 
 class PilotSerializer(serializers.HyperlinkedModelSerializer):
@@ -40,7 +40,28 @@ class ShipSerializer(serializers.HyperlinkedModelSerializer):
       raise serializers.ValidationError('Weight capacity cannot be negative.')
     return weightCapacity
 
+class ResourceSerializer(serializers.HyperlinkedModelSerializer):
+  class Meta:
+    model = Resource
+    fields = '__all__'
+
+  def validate_weight(self, weight):
+    if weight < 0:
+      raise serializers.ValidationError('Weight cannot be less than zero.')
+    return weight
+
+class ResourceListSerializer(serializers.HyperlinkedModelSerializer):
+  class Meta:
+    model = ResourceList
+    fields = '__all__'
+
 class ContractSerializer(serializers.HyperlinkedModelSerializer):
   class Meta:
     model = Contract
     fields = '__all__'
+
+  def to_representation(self, instance):
+    response = super().to_representation(instance)
+    query = Resource.objects.filter(list=instance.payload).values()
+    response['payload'] = query
+    return response
