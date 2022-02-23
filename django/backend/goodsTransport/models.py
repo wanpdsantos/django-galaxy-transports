@@ -1,12 +1,7 @@
 from django.db import models
-from .validators import validate_age
+from goodsTransport.validators import validate_age
+from goodsTransport.constants import PLANETS
 
-PLANETS = [
-  ('ANDVARI','Andvari'),
-  ('AQUA','Aqua'),
-  ('CALAS','Calas'),
-  ('DEMETER','Demeter'),
-]
 class Pilot(models.Model):
   pilotCertification = models.CharField(max_length=7, blank=False, null=False, unique=True)
   name = models.CharField(max_length=100, blank=False, null=False)
@@ -33,12 +28,18 @@ class Resource(models.Model):
   list = models.ForeignKey(ResourceList, on_delete=models.CASCADE, blank=False, null=False)
 
 class Contract(models.Model):
+  STATUS = [
+    ('OPEN', 'Open'),
+    ('ACCEPTED', 'Accepted'),
+    ('CONCLUDED', 'Concluded'),
+  ]
   description = models.CharField(max_length=200, blank=True, null=True)
   originPlanet = models.CharField(choices=PLANETS, max_length=10, blank=False, null=False)
   destinationPlanet = models.CharField(choices=PLANETS, max_length=10, blank=False, null=False)
   value = models.DecimalField(max_digits=12, decimal_places=2, blank=False, null=False)
   payload = models.ForeignKey(ResourceList, on_delete=models.CASCADE, blank=False, null=False)
-
+  status = models.CharField(choices=STATUS, max_length=10, blank=False, null=False)
+  pilot = models.ForeignKey(Pilot, on_delete=models.DO_NOTHING, blank=True, null=True)
 
 
 

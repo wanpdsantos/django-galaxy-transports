@@ -15,7 +15,6 @@ class PilotSerializer(serializers.HyperlinkedModelSerializer):
       raise serializers.ValidationError('Insufficient credits to perform this operation.')
     return credits
   
-
 class ShipSerializer(serializers.HyperlinkedModelSerializer):
   class Meta:
     model = Ship

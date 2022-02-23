@@ -11,6 +11,26 @@ class PilotViewSet(viewsets.ModelViewSet):
   queryset = Pilot.objects.all()
   serializer_class = PilotSerializer
 
+  @action(detail = True, methods = ['post'])
+  def contract(self, request, *args, **kwargs):
+    if not 'contract_id' in request.data: 
+      return Response({'Missing contract_id on request body.'}, status = status.HTTP_400_BAD_REQUEST)
+
+    queryset = Contract.objects.all()
+    contract = get_object_or_404(queryset, id = request.data['contract_id'])
+    if isinstance(contract.pilot, Pilot): 
+      return Response({'Contract already accepted.'}, status = status.HTTP_409_CONFLICT) 
+
+    serializer = ContractSerializer(
+      contract, 
+      data={'status': 'ACCEPTED' , 'pilot': reverse("pilot-detail", args=[self.get_object().id]) }, 
+      partial=True,
+      context={'request': request}
+    )
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    return Response(serializer.data, status = status.HTTP_201_CREATED)
+
 class ShipViewSet(viewsets.ModelViewSet):
   queryset = Ship.objects.all()
   serializer_class = ShipSerializer
@@ -83,7 +103,8 @@ class ContractViewSet(viewsets.ModelViewSet):
       originPlanet = request.data['originPlanet'],
       destinationPlanet = request.data['destinationPlanet'],
       value = request.data['value'],
-      payload = newResourceList
+      payload = newResourceList,
+      status = 'OPEN',
     )
     return Response(ContractSerializer(
       contract, 
