@@ -35,7 +35,7 @@ class PilotViewSetTest(APITestCase):
       'locationPlanet': 'CALAS'
     }
     self.url_pilot_list = reverse('pilot-list')
-    self.url_pilot_contract = reverse('pilot-contract', args=[self.pilot_1.pk])
+    self.url_pilot_contract = reverse('pilot-contracts', args=[self.pilot_1.pk])
 
   def test_get_pilot_list(self):
     pilotApi = self.client.get(
@@ -75,7 +75,7 @@ class PilotViewSetTest(APITestCase):
       {'contract_id': self.contract.id},
       format='json'
     )
-    self.assertEqual(pilotApi.status_code, status.HTTP_201_CREATED)
+    self.assertEqual(pilotApi.status_code, status.HTTP_202_ACCEPTED)
 
   def test_pilot_accept_contract_already_accepted(self):
     pilotApi = self.client.post(
@@ -83,7 +83,7 @@ class PilotViewSetTest(APITestCase):
       {'contract_id': self.contractAlreadyAccepted.id},
       format='json'
     )
-    self.assertEqual(pilotApi.status_code, status.HTTP_409_CONFLICT)
+    self.assertEqual(pilotApi.status_code, status.HTTP_400_BAD_REQUEST)
 
   def test_pilot_accept_contract_missing_contractId(self):
     pilotApi = self.client.post(
@@ -91,7 +91,7 @@ class PilotViewSetTest(APITestCase):
       {},
       format='json'
     )
-    self.assertEqual(pilotApi.status_code, status.HTTP_400_BAD_REQUEST)
+    self.assertEqual(pilotApi.status_code, status.HTTP_404_NOT_FOUND)
 
 class ShipViewSetTest(APITestCase):
   def setUp(self):

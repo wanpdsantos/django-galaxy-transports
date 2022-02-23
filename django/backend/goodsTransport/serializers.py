@@ -65,3 +65,9 @@ class ContractSerializer(serializers.HyperlinkedModelSerializer):
     query = Resource.objects.filter(list=instance.payload).values()
     response['payload'] = query
     return response
+
+  def update(self, instance, validated_data):
+    if(getattr(instance, 'status') == 'ACCEPTED' and validated_data['status'] == 'ACCEPTED'):
+      raise serializers.ValidationError('Contract already accepted.')
+
+    return super(ContractSerializer, self).update(instance, validated_data)

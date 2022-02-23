@@ -11,25 +11,40 @@ class PilotViewSet(viewsets.ModelViewSet):
   queryset = Pilot.objects.all()
   serializer_class = PilotSerializer
 
-  @action(detail = True, methods = ['post'])
-  def contract(self, request, *args, **kwargs):
-    if not 'contract_id' in request.data: 
-      return Response({'Missing contract_id on request body.'}, status = status.HTTP_400_BAD_REQUEST)
+  def get_pilot_contracts(self):
+    queryset = Contract.objects.filter(pilot=self.get_object())
+    serializer = ContractSerializer(queryset, many=True,context={'request': self.request})
+    return serializer.data
 
+  def pilot_accept_contract(self):
     queryset = Contract.objects.all()
-    contract = get_object_or_404(queryset, id = request.data['contract_id'])
-    if isinstance(contract.pilot, Pilot): 
-      return Response({'Contract already accepted.'}, status = status.HTTP_409_CONFLICT) 
-
+    contract = get_object_or_404(queryset, id = self.request.data.get('contract_id'))
     serializer = ContractSerializer(
       contract, 
       data={'status': 'ACCEPTED' , 'pilot': reverse("pilot-detail", args=[self.get_object().id]) }, 
       partial=True,
-      context={'request': request}
+      context={'request': self.request}
     )
     serializer.is_valid(raise_exception=True)
     serializer.save()
-    return Response(serializer.data, status = status.HTTP_201_CREATED)
+    return serializer.data
+
+  @action(detail = True, methods = ['GET','POST'])
+  def contracts(self, request, *args, **kwargs):
+    requestType = {
+      'POST': {
+        'function': self.pilot_accept_contract,
+        'statusCode': status.HTTP_202_ACCEPTED,
+      },
+      'GET': {
+        'function': self.get_pilot_contracts,
+        'statusCode': status.HTTP_200_OK,
+      }
+    }
+    return Response(
+      requestType[request.method]['function'](), 
+      status = requestType[request.method]['statusCode']
+    )
 
 class ShipViewSet(viewsets.ModelViewSet):
   queryset = Ship.objects.all()
@@ -38,10 +53,10 @@ class ShipViewSet(viewsets.ModelViewSet):
   @action(detail = True, methods = ['patch'])
   def fuel(self, request, *args, **kwargs):
     queryset = Pilot.objects.all()
-    pilot = get_object_or_404(queryset, pilotCertification = request.data['pilotCertification'])
+    pilot = get_object_or_404(queryset, pilotCertification = request.data.get('pilotCertification'))
     serializer = PilotSerializer(
       pilot, 
-      data={'credits': pilot.credits-request.data['quantity']*FUEL_COST_PER_UNITY}, 
+      data={'credits': pilot.credits-request.data.get('quantity')*FUEL_COST_PER_UNITY}, 
       partial=True,
       context={'request': request}
     )
@@ -52,7 +67,7 @@ class ShipViewSet(viewsets.ModelViewSet):
       serializer = ShipSerializer(
         ship, 
         data={
-          'fuelLevel': ship.fuelLevel+request.data['quantity'],
+          'fuelLevel': ship.fuelLevel+request.data.get('quantity'),
           'fuelCapacity': ship.fuelCapacity
         }, 
         partial=True,
@@ -63,7 +78,7 @@ class ShipViewSet(viewsets.ModelViewSet):
     except serializers.ValidationError:
       serializerRollBack = PilotSerializer(
         pilot, 
-        data={'credits': pilot.credits+request.data['quantity']*FUEL_COST_PER_UNITY}, 
+        data={'credits': pilot.credits+request.data.get('quantity')*FUEL_COST_PER_UNITY}, 
         partial=True,
         context={'request': request}
       )
@@ -92,17 +107,17 @@ class ContractViewSet(viewsets.ModelViewSet):
         'name': item['name'], 
         'weight': item['weight']
       }, 
-      request.data['payload']
+      request.data.get('payload')
     ))
     serializer = ResourceSerializer(data=items, many=True)
     serializer.is_valid(raise_exception=True)
     serializer.save()
 
     contract = Contract.objects.create(
-      description = request.data['description'],
-      originPlanet = request.data['originPlanet'],
-      destinationPlanet = request.data['destinationPlanet'],
-      value = request.data['value'],
+      description = request.data.get('description'),
+      originPlanet = request.data.get('originPlanet'),
+      destinationPlanet = request.data.get('destinationPlanet'),
+      value = request.data.get('value'),
       payload = newResourceList,
       status = 'OPEN',
     )
