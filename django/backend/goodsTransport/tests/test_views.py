@@ -2,7 +2,7 @@ from django.urls import reverse
 from goodsTransport.tests.factories import PilotFactory, ShipFactory, ContractFactory, ResourceListFactory
 from rest_framework import status
 from rest_framework.test import APITestCase
-from goodsTransport.models import Ship, Contract, ResourceList
+from goodsTransport.models import Ship, ResourceList, Pilot
 from goodsTransport.constants import FUEL_COST_PER_UNITY
 
 class PilotViewSetTest(APITestCase):
@@ -203,15 +203,12 @@ class ShipViewSetTest(APITestCase):
 
 class ContractViewSetTest(APITestCase):
   def setUp(self):
-    self.resourceList = ResourceList.objects.create()
-    self.contract = Contract.objects.create(
-      description = '123',
-      originPlanet = 'CALAS',
-      destinationPlanet = 'CALAS',
-      value = 20.25,
-      payload = self.resourceList
-    )
-    self.contractOk = {
+    resourceList = ResourceList.objects.create()
+    self.pilot = PilotFactory()
+    self.contractOpen = ContractFactory(payload=resourceList, status='OPEN')
+    self.contractAccepted = ContractFactory(payload=resourceList, status='ACCEPTED', pilot=self.pilot)
+    self.contractAlreadyConcluded = ContractFactory(payload=resourceList, status='CONCLUDED')
+    self.contractAllGood = {
       'description': 'TestDescription',
       'originPlanet': 'CALAS',
       'destinationPlanet': 'CALAS',
@@ -226,6 +223,18 @@ class ContractViewSetTest(APITestCase):
       'payload': [{'name':'WATER', 'weight': -20}]
     }
     self.url_contract_list = reverse('contract-list')
+    self.url_contract_open_fullfill = reverse(
+      'contract-fullfill', 
+      args=[self.contractOpen.pk]
+    )
+    self.url_contract_concluded_fullfill = reverse(
+      'contract-fullfill',
+      args=[self.contractAlreadyConcluded.pk]
+    )
+    self.url_contract_accepted_fullfill = reverse(
+      'contract-fullfill', 
+      args=[self.contractAccepted.pk]
+    )
 
   def test_get_contract_list(self):
     contractApi = self.client.get(
@@ -233,12 +242,12 @@ class ContractViewSetTest(APITestCase):
       format='json'
     )
     self.assertEqual(contractApi.status_code, status.HTTP_200_OK)
-    self.assertEqual(len(contractApi.json()), 1)
+    self.assertEqual(len(contractApi.json()), 3)
 
   def test_create_contract(self):
     contractApi = self.client.post(
       self.url_contract_list,
-      self.contractOk,
+      self.contractAllGood,
       format='json'
     )
     self.assertEqual(contractApi.status_code, status.HTTP_201_CREATED)
@@ -247,6 +256,35 @@ class ContractViewSetTest(APITestCase):
     contractApi = self.client.post(
       self.url_contract_list,
       self.contractNegativeResourceWeight,
+      format='json'
+    )
+    self.assertEqual(contractApi.status_code, status.HTTP_400_BAD_REQUEST)
+
+  def test_fullfill_contract(self):
+    contractApi = self.client.patch(
+      self.url_contract_accepted_fullfill,
+      {},
+      format='json'
+    )
+    pilotAfterFullfill = Pilot.objects.get(pk=self.pilot.pk)
+    self.assertEqual(
+      self.pilot.credits+self.contractAccepted.value, 
+      pilotAfterFullfill.credits
+    )
+    self.assertEqual(contractApi.status_code, status.HTTP_202_ACCEPTED)
+
+  def test_fullfill_contract_concluded(self):
+    contractApi = self.client.patch(
+      self.url_contract_concluded_fullfill,
+      {},
+      format='json'
+    )
+    self.assertEqual(contractApi.status_code, status.HTTP_400_BAD_REQUEST)
+
+  def test_fullfill_contract_open(self):
+    contractApi = self.client.patch(
+      self.url_contract_open_fullfill,
+      {},
       format='json'
     )
     self.assertEqual(contractApi.status_code, status.HTTP_400_BAD_REQUEST)

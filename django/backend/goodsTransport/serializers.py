@@ -70,4 +70,10 @@ class ContractSerializer(serializers.HyperlinkedModelSerializer):
     if(getattr(instance, 'status') == 'ACCEPTED' and validated_data['status'] == 'ACCEPTED'):
       raise serializers.ValidationError('Contract already accepted.')
 
+    if(getattr(instance, 'status') == 'CONCLUDED' and validated_data['status'] == 'CONCLUDED'):
+      raise serializers.ValidationError('Contract already concluded.')
+
+    if(getattr(instance, 'status') == 'OPEN' and validated_data['status'] == 'CONCLUDED'):
+      raise serializers.ValidationError('Cannot fullfill open contracts.')
+
     return super(ContractSerializer, self).update(instance, validated_data)

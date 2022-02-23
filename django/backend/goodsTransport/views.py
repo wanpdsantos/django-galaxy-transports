@@ -125,3 +125,26 @@ class ContractViewSet(viewsets.ModelViewSet):
       contract, 
       context={'request': request}
     ).data, status = status.HTTP_201_CREATED)
+
+  @action(detail = True, methods = ['patch'])
+  def fullfill(self, request, *args, **kwargs):
+    contract = self.get_object()
+    serializer = ContractSerializer(
+      contract, 
+      data={'status': 'CONCLUDED'}, 
+      partial=True, 
+      context={'request': request}
+    )
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+
+    pilot = get_object_or_404(Pilot, pk=contract.pilot.pk)
+    serializerPilot = PilotSerializer(
+      pilot, 
+      data={'credits': pilot.credits+contract.value}, 
+      partial=True,
+      context={'request': request}
+    )
+    serializerPilot.is_valid(raise_exception=True)
+    serializerPilot.save()
+    return Response(serializer.data, status = status.HTTP_202_ACCEPTED)
