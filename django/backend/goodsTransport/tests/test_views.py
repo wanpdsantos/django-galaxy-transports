@@ -1,48 +1,41 @@
 from django.urls import reverse
-from goodsTransport.tests.factories import PilotFactory, ShipFactory
+from goodsTransport.tests.factories import PilotFactory, ShipFactory, ContractFactory, ResourceListFactory
 from rest_framework import status
 from rest_framework.test import APITestCase
-from goodsTransport.models import Pilot, Ship, Contract, ResourceList
+from goodsTransport.models import Ship, Contract, ResourceList
 from goodsTransport.constants import FUEL_COST_PER_UNITY
 
 class PilotViewSetTest(APITestCase):
   def setUp(self):
-    self.pilot_1 = Pilot.objects.create(
-      pilotCertification = '123',
-      name = 'Wand',
-      age = 20,
-      credits = 20.25,
-      locationPlanet = 'Calas'
-    )
-    self.pilot_2 = Pilot.objects.create(
-      pilotCertification = '321',
-      name = 'Wand2',
-      age = 18,
-      credits = 20.25,
-      locationPlanet = 'Calas'
-    )
-    self.createPilot1 = {
+    self.pilot_1 = PilotFactory()
+    self.pilot_2 = PilotFactory()
+    resourceList = ResourceListFactory()
+    self.contract = ContractFactory(status='OPEN', payload=resourceList)
+    self.contractAlreadyAccepted = ContractFactory(status='ACCEPTED', payload=resourceList, pilot=self.pilot_1)
+    
+    self.pilotAllGood = {
       'pilotCertification': '111',
       'name': 'Wand3',
-      'age': 18,
+      'age': 20,
       'credits': 20.25,
       'locationPlanet': 'CALAS'
     }
-    self.createPilot2 = {
+    self.pilotUnder18 = {
       'pilotCertification': '222',
       'name': 'Wand4',
       'age': 17,
       'credits': 20.25,
       'locationPlanet': 'CALAS'
     }
-    self.createPilot3 = {
-      'pilotCertification': '222',
+    self.pilotNegativeCredits = {
+      'pilotCertification': '333',
       'name': 'Wand4',
       'age': 17,
       'credits': -1,
       'locationPlanet': 'CALAS'
     }
     self.url_pilot_list = reverse('pilot-list')
+    self.url_pilot_contract = reverse('pilot-contract', args=[self.pilot_1.pk])
 
   def test_get_pilot_list(self):
     pilotApi = self.client.get(
@@ -55,7 +48,7 @@ class PilotViewSetTest(APITestCase):
   def test_create_pilot(self):
     pilotApi = self.client.post(
       self.url_pilot_list,
-      self.createPilot1,
+      self.pilotAllGood,
       format='json'
     )
     self.assertEqual(pilotApi.status_code, status.HTTP_201_CREATED)
@@ -63,7 +56,7 @@ class PilotViewSetTest(APITestCase):
   def test_create_pilot_under_18(self):
     pilotApi = self.client.post(
       self.url_pilot_list,
-      self.createPilot2,
+      self.pilotUnder18,
       format='json'
     )
     self.assertEqual(pilotApi.status_code, status.HTTP_400_BAD_REQUEST)
@@ -71,7 +64,31 @@ class PilotViewSetTest(APITestCase):
   def test_create_pilot_negative_credits(self):
     pilotApi = self.client.post(
       self.url_pilot_list,
-      self.createPilot3,
+      self.pilotNegativeCredits,
+      format='json'
+    )
+    self.assertEqual(pilotApi.status_code, status.HTTP_400_BAD_REQUEST)
+
+  def test_pilot_accept_contract(self):
+    pilotApi = self.client.post(
+      self.url_pilot_contract,
+      {'contract_id': self.contract.id},
+      format='json'
+    )
+    self.assertEqual(pilotApi.status_code, status.HTTP_201_CREATED)
+
+  def test_pilot_accept_contract_already_accepted(self):
+    pilotApi = self.client.post(
+      self.url_pilot_contract,
+      {'contract_id': self.contractAlreadyAccepted.id},
+      format='json'
+    )
+    self.assertEqual(pilotApi.status_code, status.HTTP_409_CONFLICT)
+
+  def test_pilot_accept_contract_missing_contractId(self):
+    pilotApi = self.client.post(
+      self.url_pilot_contract,
+      {},
       format='json'
     )
     self.assertEqual(pilotApi.status_code, status.HTTP_400_BAD_REQUEST)

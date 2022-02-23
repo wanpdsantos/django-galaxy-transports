@@ -8,6 +8,7 @@ class PilotFactory(factory.django.DjangoModelFactory ):
   pilotCertification = factory.Sequence(int)
   name = factory.Faker("name")
   age = 20
+  credits = 20
 
 class ShipFactory(factory.django.DjangoModelFactory):
   class Meta:
