@@ -5,6 +5,7 @@ class PilotFactory(factory.django.DjangoModelFactory ):
   class Meta:
     model = Pilot
 
+  pilotCertification = factory.Sequence(int)
   name = factory.Faker("name")
   age = 20
 

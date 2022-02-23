@@ -5,15 +5,16 @@ class PilotSerializer(serializers.HyperlinkedModelSerializer):
   class Meta:
     fields = '__all__'
     model = Pilot
-  
+
   def validate_age(self, age):
     if age < 18:
       raise serializers.ValidationError('Age must be at least 18.')
     return age
   def validate_credits(self, credits):
     if credits < 0:
-      raise serializers.ValidationError('Credits cannot be negative.')
+      raise serializers.ValidationError('Insufficient credits to perform this operation.')
     return credits
+  
 
 class ShipSerializer(serializers.HyperlinkedModelSerializer):
   class Meta:
