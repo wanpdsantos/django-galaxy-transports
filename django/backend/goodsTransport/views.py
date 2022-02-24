@@ -2,7 +2,7 @@ from django.urls import reverse
 from django.shortcuts import get_object_or_404
 from goodsTransport.serializers import PilotSerializer, ShipSerializer, ContractSerializer, ResourceSerializer, ResourceListSerializer
 from goodsTransport.models import Pilot, Ship, Contract, ResourceList, Resource
-from goodsTransport.constants import FUEL_COST_PER_UNITY
+from goodsTransport.constants import FUEL_COST_PER_UNITY, ROUTES
 from rest_framework import viewsets, serializers, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -10,6 +10,93 @@ from rest_framework.decorators import action
 class PilotViewSet(viewsets.ModelViewSet):
   queryset = Pilot.objects.all()
   serializer_class = PilotSerializer
+  
+  def pilot_travel_between_planets(self):
+    pilot = self.get_object()
+    origin = pilot.locationPlanet
+    destination = self.request.query_params.get('destination', '').upper()
+    serializer = PilotSerializer(
+      pilot, 
+      data={'locationPlanet': destination},
+      partial=True,
+      context={'request': self.request}
+    )
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+
+    ship = pilot.ship
+    serializerShip = ShipSerializer(
+      ship,
+      data={'fuelLevel': ship.fuelLevel - ROUTES[f"{origin}-{destination}"]['fuelCost']},
+      partial=True,
+      context={'request': self.request}
+    )
+    serializerShip.is_valid(raise_exception=True)
+    serializerShip.save()
+    return serializer.data
+
+  @action(detail = True, methods = ['PATCH'])
+  def travels(self, request, *args, **kwargs):
+    requestType = {
+      'PATCH': {
+        'function': self.pilot_travel_between_planets,
+        'statusCode': status.HTTP_202_ACCEPTED,
+      }
+    }
+    return Response(
+      requestType[request.method]['function'](), 
+      status = requestType[request.method]['statusCode']
+    )
+
+  def get_pilot_ship(self):
+    queryset = Ship.objects.filter(pilot=self.get_object())
+    serializer = ShipSerializer(queryset, many=True,context={'request': self.request})
+    return serializer.data
+
+  def attach_ship_to_pilot(self):
+    queryset = Ship.objects.all()
+    ship = get_object_or_404(queryset, id = self.request.data.get('ship_id'))
+    serializer = self.serializer_class(
+      self.get_object(), 
+      data={'ship':reverse("ship-detail", args=[ship.id])}, 
+      partial=True,
+      context={'request': self.request}
+    )
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    return serializer.data
+
+  def remove_ship_from_pilot(self):
+    serializer = self.serializer_class(
+      self.get_object(), 
+      data={'ship': None}, 
+      partial=True,
+      context={'request': self.request}
+    )
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    return serializer.data
+
+  @action(detail = True, methods = ['GET', 'PATCH', 'DELETE'])
+  def ships(self, request, *args, **kwargs):
+    requestType = {
+      'PATCH': {
+        'function': self.attach_ship_to_pilot,
+        'statusCode': status.HTTP_202_ACCEPTED,
+      },
+      'GET': {
+        'function': self.get_pilot_ship,
+        'statusCode': status.HTTP_200_OK,
+      },
+      'DELETE': {
+        'function': self.remove_ship_from_pilot,
+        'statusCode': status.HTTP_202_ACCEPTED,
+      }
+    }
+    return Response(
+      requestType[request.method]['function'](), 
+      status = requestType[request.method]['statusCode']
+    )
 
   def get_pilot_contracts(self):
     queryset = Contract.objects.filter(pilot=self.get_object())

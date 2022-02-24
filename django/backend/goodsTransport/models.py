@@ -2,17 +2,18 @@ from django.db import models
 from goodsTransport.validators import validate_age
 from goodsTransport.constants import PLANETS
 
+class Ship(models.Model):
+  fuelCapacity = models.DecimalField(max_digits=12, decimal_places=2, blank=False, null=False)
+  fuelLevel = models.DecimalField(max_digits=12, decimal_places=2, blank=False, null=False)
+  weightCapacity = models.DecimalField(max_digits=12, decimal_places=2, blank=False, null=False)
+
 class Pilot(models.Model):
   pilotCertification = models.CharField(max_length=7, blank=False, null=False, unique=True)
   name = models.CharField(max_length=100, blank=False, null=False)
   age = models.IntegerField(validators=[validate_age], blank=False, null=False)
   credits = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
   locationPlanet = models.CharField(choices=PLANETS, max_length=10, blank=True, null=True)
-
-class Ship(models.Model):
-  fuelCapacity = models.DecimalField(max_digits=12, decimal_places=2, blank=False, null=False)
-  fuelLevel = models.DecimalField(max_digits=12, decimal_places=2, blank=False, null=False)
-  weightCapacity = models.DecimalField(max_digits=12, decimal_places=2, blank=False, null=False)
+  ship = models.OneToOneField(Ship, on_delete=models.CASCADE, blank=True, null=True)
 
 class ResourceList(models.Model):
   id = models.BigAutoField(primary_key=True)

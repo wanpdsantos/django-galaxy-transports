@@ -1,10 +1,28 @@
 from goodsTransport.models import Pilot, Ship, Contract, Resource, ResourceList
 from rest_framework import serializers
+from goodsTransport.constants import ROUTES
 
 class PilotSerializer(serializers.HyperlinkedModelSerializer):
   class Meta:
     fields = '__all__'
     model = Pilot
+  
+  def update(self, instance, validated_data, *args, **kwargs):
+    request = self.context.get('request', False)
+    if request and 'travels' in request.path:
+      route = f"{getattr(instance, 'locationPlanet')}-{validated_data['locationPlanet']}"
+      route = ROUTES.get(route, False)
+
+      if not route or not route['allowed']: 
+        raise serializers.ValidationError('Route not available.')
+        
+      if not isinstance(getattr(instance, 'ship'), Ship):
+        raise serializers.ValidationError('Pilot does not have a ship. Attach a ship to the pilot before traveling.')
+
+      if not route or route['fuelCost'] > getattr(instance, 'ship').fuelLevel:
+        raise serializers.ValidationError('Not enough fuel to travel.')
+
+    return super(PilotSerializer, self).update(instance, validated_data)
 
   def validate_age(self, age):
     if age < 18:
@@ -21,8 +39,10 @@ class ShipSerializer(serializers.HyperlinkedModelSerializer):
     fields = '__all__'
   
   def validate(self, data):
-    if data['fuelLevel'] > data['fuelCapacity']:
-      raise serializers.ValidationError('Max fuel level reached.')
+    request = self.context.get('request', False)
+    if request and 'ships' in request.path:
+      if data['fuelLevel'] > data['fuelCapacity']:
+        raise serializers.ValidationError('Max fuel level reached.')
     return data
 
   def validate_fuelCapacity(self, fuelCapacity):

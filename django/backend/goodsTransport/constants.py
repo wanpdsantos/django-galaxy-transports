@@ -8,51 +8,51 @@ PLANETS = [
 ]
 
 ROUTES = {
-  'Andvari-Demeter': {
+  'ANDVARI-DEMETER': {
     'allowed': False,
     'fuelCost': None
   },
-  'Andvari-Aqua': {
+  'ANDVARI-AQUA': {
     'allowed': True,
     'fuelCost': 13
   },
-  'Andvari-Calas': {
+  'ANDVARI-CALAS': {
     'allowed': True,
     'fuelCost': 23
   },
-  'Demeter-Andvari': {
+  'DEMETER-ANDVARI': {
     'allowed': False,
     'fuelCost': None
   },
-  'Demeter-Aqua': {
+  'DEMETER-AQUA': {
     'allowed': True,
     'fuelCost': 22
   },
-  'Demeter-Calas': {
+  'DEMETER-CALAS': {
     'allowed': True,
     'fuelCost': 25
   },
-  'Aqua-Andvari': {
+  'AQUA-ANDVARI': {
     'allowed': False,
     'fuelCost': None
   },
-  'Aqua-Demeter': {
+  'AQUA-DEMETER': {
     'allowed': True,
     'fuelCost': 30
   },
-  'Aqua-Calas': {
+  'AQUA-CALAS': {
     'allowed': True,
     'fuelCost': 12
   },
-  'Calas-Andvari': {
+  'CALAS-ANDVARI': {
     'allowed': True,
     'fuelCost': 20
   },
-  'Calas-Demeter': {
+  'CALAS-DEMETER': {
     'allowed': True,
     'fuelCost': 25
   },
-  'Calas-Aqua': {
+  'CALAS-AQUA': {
     'allowed': True,
     'fuelCost': 15
   }

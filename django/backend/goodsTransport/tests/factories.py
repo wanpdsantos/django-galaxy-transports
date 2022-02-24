@@ -14,9 +14,9 @@ class ShipFactory(factory.django.DjangoModelFactory):
   class Meta:
     model = Ship
   
-  fuelCapacity = 10
-  fuelLevel = 5
-  weightCapacity = 10
+  fuelCapacity = 100
+  fuelLevel = 100
+  weightCapacity = 100
 
 class ResourceListFactory(factory.django.DjangoModelFactory):
   class Meta:

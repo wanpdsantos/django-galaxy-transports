@@ -3,15 +3,21 @@ from goodsTransport.tests.factories import PilotFactory, ShipFactory, ContractFa
 from rest_framework import status
 from rest_framework.test import APITestCase
 from goodsTransport.models import Ship, ResourceList, Pilot
-from goodsTransport.constants import FUEL_COST_PER_UNITY
+from goodsTransport.constants import FUEL_COST_PER_UNITY, ROUTES
 
 class PilotViewSetTest(APITestCase):
   def setUp(self):
-    self.pilot_1 = PilotFactory()
-    self.pilot_2 = PilotFactory()
+    self.initialFuel = 50
+    self.shipPilotAqua = ShipFactory(fuelLevel = self.initialFuel)
+    self.shipPilotCalas = ShipFactory(fuelLevel = self.initialFuel)
+    self.shipLowFuel = ShipFactory(fuelLevel = 1)
+    self.pilotAqua = PilotFactory(locationPlanet='AQUA', ship=self.shipPilotAqua)
+    self.pilotCalas = PilotFactory(locationPlanet='CALAS', ship=self.shipPilotCalas)
+    self.pilotCalasWithoutShip = PilotFactory(locationPlanet='CALAS', ship=None)
+    self.pilotCalasShipLowFuel = PilotFactory(locationPlanet='CALAS', ship=self.shipLowFuel)
     resourceList = ResourceListFactory()
     self.contract = ContractFactory(status='OPEN', payload=resourceList)
-    self.contractAlreadyAccepted = ContractFactory(status='ACCEPTED', payload=resourceList, pilot=self.pilot_1)
+    self.contractAlreadyAccepted = ContractFactory(status='ACCEPTED', payload=resourceList, pilot=self.pilotAqua)
     
     self.pilotAllGood = {
       'pilotCertification': '111',
@@ -35,7 +41,11 @@ class PilotViewSetTest(APITestCase):
       'locationPlanet': 'CALAS'
     }
     self.url_pilot_list = reverse('pilot-list')
-    self.url_pilot_contract = reverse('pilot-contracts', args=[self.pilot_1.pk])
+    self.url_pilot_contract = reverse('pilot-contracts', args=[self.pilotAqua.pk])
+    self.url_pilot_travel_good_route = reverse('pilot-travels', args=[self.pilotCalas.pk]) + '?destination=Andvari'
+    self.url_pilot_travel_blocked_route = reverse('pilot-travels', args=[self.pilotAqua.pk]) + '?destination=Andvari'
+    self.url_pilot_travel_without_ship = reverse('pilot-travels', args=[self.pilotCalasWithoutShip.pk]) + '?destination=Andvari'
+    self.url_pilot_travel_low_fuel = reverse('pilot-travels', args=[self.pilotCalasShipLowFuel.pk]) + '?destination=Andvari'
 
   def test_get_pilot_list(self):
     pilotApi = self.client.get(
@@ -43,7 +53,7 @@ class PilotViewSetTest(APITestCase):
       format='json'
     )
     self.assertEqual(pilotApi.status_code, status.HTTP_200_OK)
-    self.assertEqual(len(pilotApi.json()), 2)
+    self.assertEqual(len(pilotApi.json()), 4)
 
   def test_create_pilot(self):
     pilotApi = self.client.post(
@@ -92,6 +102,40 @@ class PilotViewSetTest(APITestCase):
       format='json'
     )
     self.assertEqual(pilotApi.status_code, status.HTTP_404_NOT_FOUND)
+
+  def test_pilot_travel_between_planets(self):
+    pilotApi = self.client.patch(
+      self.url_pilot_travel_good_route,
+      {},
+      format='json'
+    )
+    ship = Ship.objects.get(pk=self.shipPilotCalas.pk)
+    self.assertEqual(ship.fuelLevel, self.initialFuel - ROUTES['CALAS-ANDVARI']['fuelCost'])
+    self.assertEqual(pilotApi.status_code, status.HTTP_202_ACCEPTED)
+
+  def test_pilot_travel_between_planets_blocked_route(self):
+    pilotApi = self.client.patch(
+      self.url_pilot_travel_blocked_route,
+      {},
+      format='json'
+    )
+    self.assertEqual(pilotApi.status_code, status.HTTP_400_BAD_REQUEST)
+
+  def test_pilot_travel_between_planets_without_ship(self):
+    pilotApi = self.client.patch(
+      self.url_pilot_travel_without_ship,
+      {},
+      format='json'
+    )
+    self.assertEqual(pilotApi.status_code, status.HTTP_400_BAD_REQUEST)
+
+  def test_pilot_travel_between_planets_low_fuel(self):
+    pilotApi = self.client.patch(
+      self.url_pilot_travel_low_fuel,
+      {},
+      format='json'
+    )
+    self.assertEqual(pilotApi.status_code, status.HTTP_400_BAD_REQUEST)
 
 class ShipViewSetTest(APITestCase):
   def setUp(self):
@@ -169,7 +213,7 @@ class ShipViewSetTest(APITestCase):
     )
     self.assertEqual(shipApi.status_code, status.HTTP_400_BAD_REQUEST)
 
-  def test_create_ship_level_greater_capacity(self):
+  def test_create_ship_level_greater_than_capacity(self):
     shipApi = self.client.post(
       self.url_ship_list,
       self.createShipLevelGreaterCapacity,
