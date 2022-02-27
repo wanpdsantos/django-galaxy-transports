@@ -1,4 +1,5 @@
 from django.urls import reverse
+from django.db.models import Sum
 from goodsTransport.models import Pilot, Ship, Contract, Resource, ResourceList
 from rest_framework import serializers
 from goodsTransport.constants import ROUTES
@@ -93,6 +94,11 @@ class ContractSerializer(serializers.HyperlinkedModelSerializer):
     return response
 
   def update(self, instance, validated_data):
+    if(getattr(instance, 'status') == 'OPEN' and validated_data['status'] == 'ACCEPTED'):
+      cargoTotalWeight = Resource.objects.filter(list=getattr(instance, 'payload')).aggregate(Sum("weight"))
+      if cargoTotalWeight['weight__sum'] > validated_data['pilot'].ship.weightCapacity:
+        raise serializers.ValidationError('Payload weight greater than ship weight capacity.')
+
     if(getattr(instance, 'status') == 'ACCEPTED' and validated_data['status'] == 'ACCEPTED'):
       raise serializers.ValidationError('Contract already accepted.')
 
