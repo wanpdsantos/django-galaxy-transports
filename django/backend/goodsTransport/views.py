@@ -11,7 +11,7 @@ class PilotViewSet(viewsets.ModelViewSet):
   queryset = Pilot.objects.all()
   serializer_class = PilotSerializer
   
-  def pilot_travel_between_planets(self):
+  def pilot_travel_between_planets(self, *args, **kwargs):
     pilot = self.get_object()
     origin = pilot.locationPlanet
     destination = self.request.query_params.get('destination', '').upper()
@@ -200,38 +200,80 @@ class ContractViewSet(viewsets.ModelViewSet):
     serializer.is_valid(raise_exception=True)
     serializer.save()
 
-    contract = Contract.objects.create(
-      description = request.data.get('description'),
-      originPlanet = request.data.get('originPlanet'),
-      destinationPlanet = request.data.get('destinationPlanet'),
-      value = request.data.get('value'),
-      payload = newResourceList,
-      status = 'OPEN',
-    )
-    return Response(ContractSerializer(
-      contract, 
-      context={'request': request}
-    ).data, status = status.HTTP_201_CREATED)
+    contract = {
+      'description': request.data.get('description'),
+      'originPlanet': request.data.get('originPlanet'),
+      'destinationPlanet':request.data.get('destinationPlanet'),
+      'value': request.data.get('value'),
+      'payload': reverse("resourcelist-detail", args=[newResourceList.id]),
+      'status': 'OPEN'
+    }
+    serializer = ContractSerializer(data=contract, context={'request': request})
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    return Response(serializer.data, status = status.HTTP_201_CREATED)
 
   @action(detail = True, methods = ['patch'])
   def fullfill(self, request, *args, **kwargs):
     contract = self.get_object()
-    serializer = ContractSerializer(
+    serializerContract = ContractSerializer(
       contract, 
       data={'status': 'CONCLUDED'}, 
       partial=True, 
       context={'request': request}
     )
-    serializer.is_valid(raise_exception=True)
-    serializer.save()
+    serializerContract.is_valid(raise_exception=True)
+    serializerContract.save()
 
-    pilot = get_object_or_404(Pilot, pk=contract.pilot.pk)
-    serializerPilot = PilotSerializer(
-      pilot, 
-      data={'credits': pilot.credits+contract.value}, 
-      partial=True,
-      context={'request': request}
-    )
-    serializerPilot.is_valid(raise_exception=True)
-    serializerPilot.save()
-    return Response(serializer.data, status = status.HTTP_202_ACCEPTED)
+    try:
+      pilot = get_object_or_404(Pilot, pk=contract.pilot.pk)
+      originPlanet = pilot.locationPlanet
+      initialCredits = pilot.credits
+      serializer = PilotSerializer(
+        pilot, 
+        data={'credits': pilot.credits+contract.value, 'locationPlanet': contract.destinationPlanet}, 
+        partial=True,
+        context={'request': request}
+      )     
+      serializer.is_valid(raise_exception=True)
+      serializer.save()
+    except Exception as e:
+      serializerRollback = ContractSerializer(
+        contract, 
+        data={'status': 'ACCEPTED'}, 
+        partial=True, 
+        context={'request': request}
+      )
+      serializerRollback.is_valid(raise_exception=True)
+      serializerRollback.save()
+      return Response(e.args, status = status.HTTP_400_BAD_REQUEST)
+
+    try:
+      ship = pilot.ship
+      serializer = ShipSerializer(
+        ship,
+        data={'fuelLevel': ship.fuelLevel  },
+        partial=True,
+        context={'request': request}
+      )
+    except Exception as e:
+      serializerRollback = ContractSerializer(
+        contract, 
+        data={'status': 'ACCEPTED'}, 
+        partial=True, 
+        context={'request': request}
+      )
+      serializerRollback.is_valid(raise_exception=True)
+      serializerRollback.save()
+
+      serializerRollback = PilotSerializer(
+        pilot, 
+        data={'credits': initialCredits, 'locationPlanet': originPlanet}, 
+        partial=True,
+        context={'request': request}
+      )     
+      serializerRollback.is_valid(raise_exception=True)
+      serializerRollback.save()
+      return Response(e.args, status = status.HTTP_400_BAD_REQUEST)
+
+    return Response(serializerContract.data, status = status.HTTP_202_ACCEPTED)

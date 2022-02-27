@@ -33,6 +33,6 @@ class ContractFactory(factory.django.DjangoModelFactory):
   class Meta:
     model = Contract
   
-  originPlanet = 'Calas'
-  destinationPlanet = 'Andvari'
+  originPlanet = 'CALAS'
+  destinationPlanet = 'ANDVARI'
   value = 15.5

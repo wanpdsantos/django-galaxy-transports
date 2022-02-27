@@ -1,3 +1,4 @@
+from django.urls import reverse
 from goodsTransport.models import Pilot, Ship, Contract, Resource, ResourceList
 from rest_framework import serializers
 from goodsTransport.constants import ROUTES
@@ -9,17 +10,15 @@ class PilotSerializer(serializers.HyperlinkedModelSerializer):
   
   def update(self, instance, validated_data, *args, **kwargs):
     request = self.context.get('request', False)
-    if request and 'travels' in request.path:
+    if request and not 'ships' in request.path:
       route = f"{getattr(instance, 'locationPlanet')}-{validated_data['locationPlanet']}"
       route = ROUTES.get(route, False)
 
-      if not route or not route['allowed']: 
+      if not route or not route['allowed']:
         raise serializers.ValidationError('Route not available.')
-        
       if not isinstance(getattr(instance, 'ship'), Ship):
         raise serializers.ValidationError('Pilot does not have a ship. Attach a ship to the pilot before traveling.')
-
-      if not route or route['fuelCost'] > getattr(instance, 'ship').fuelLevel:
+      if route['fuelCost'] > getattr(instance, 'ship').fuelLevel:
         raise serializers.ValidationError('Not enough fuel to travel.')
 
     return super(PilotSerializer, self).update(instance, validated_data)
@@ -80,6 +79,13 @@ class ContractSerializer(serializers.HyperlinkedModelSerializer):
     model = Contract
     fields = '__all__'
 
+  def validate(self, data):
+    request = self.context.get('request', False)
+    if request and request.path==reverse('contract-list'):
+      if data['originPlanet'].upper() == data['destinationPlanet'].upper():
+        raise serializers.ValidationError('Contracts cannot have same origin and destination.')
+    return data
+
   def to_representation(self, instance):
     response = super().to_representation(instance)
     query = Resource.objects.filter(list=instance.payload).values()
@@ -95,5 +101,10 @@ class ContractSerializer(serializers.HyperlinkedModelSerializer):
 
     if(getattr(instance, 'status') == 'OPEN' and validated_data['status'] == 'CONCLUDED'):
       raise serializers.ValidationError('Cannot fullfill open contracts.')
+
+    request = self.context.get('request', False)
+    if request and 'fullfill' in request.path:
+      if getattr(instance, 'originPlanet') != getattr(instance, 'pilot').locationPlanet:
+        raise serializers.ValidationError('Pilot shoud be at contract origin planet to start the travel.')
 
     return super(ContractSerializer, self).update(instance, validated_data)

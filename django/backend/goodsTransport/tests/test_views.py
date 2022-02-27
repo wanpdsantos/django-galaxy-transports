@@ -248,11 +248,33 @@ class ShipViewSetTest(APITestCase):
 class ContractViewSetTest(APITestCase):
   def setUp(self):
     resourceList = ResourceList.objects.create()
-    self.pilot = PilotFactory()
+    self.ship = ShipFactory()
+    self.initialCredits = 100
+    self.pilot = PilotFactory(ship=self.ship, credits=self.initialCredits, locationPlanet= 'CALAS' )
     self.contractOpen = ContractFactory(payload=resourceList, status='OPEN')
-    self.contractAccepted = ContractFactory(payload=resourceList, status='ACCEPTED', pilot=self.pilot)
-    self.contractAlreadyConcluded = ContractFactory(payload=resourceList, status='CONCLUDED')
+    self.contractAccepted = ContractFactory(
+      payload=resourceList, 
+      status='ACCEPTED', 
+      pilot=self.pilot,
+      originPlanet = 'CALAS',
+      destinationPlanet='AQUA'
+    )
+    self.contractAcceptedDifferentOrigin = ContractFactory(
+      payload=resourceList, 
+      status='ACCEPTED', 
+      pilot=self.pilot,
+      originPlanet = 'ANDVARI',
+      destinationPlanet='AQUA'
+    )
+    self.contractAlreadyConcluded = ContractFactory(payload=resourceList, status='CONCLUDED', pilot=self.pilot)
     self.contractAllGood = {
+      'description': 'TestDescription',
+      'originPlanet': 'CALAS',
+      'destinationPlanet': 'AQUA',
+      'value': 20.25,
+      'payload': []
+    }
+    self.contractSameOriginAndDestination= {
       'description': 'TestDescription',
       'originPlanet': 'CALAS',
       'destinationPlanet': 'CALAS',
@@ -262,7 +284,7 @@ class ContractViewSetTest(APITestCase):
     self.contractNegativeResourceWeight = {
       'description': 'TestDescription',
       'originPlanet': 'CALAS',
-      'destinationPlanet': 'CALAS',
+      'destinationPlanet': 'AQUA',
       'value': 20.25,
       'payload': [{'name':'WATER', 'weight': -20}]
     }
@@ -279,6 +301,10 @@ class ContractViewSetTest(APITestCase):
       'contract-fullfill', 
       args=[self.contractAccepted.pk]
     )
+    self.url_contract_accepted_not_at_start_planet = reverse(
+      'contract-fullfill', 
+      args=[self.contractAcceptedDifferentOrigin.pk]
+    )
 
   def test_get_contract_list(self):
     contractApi = self.client.get(
@@ -286,7 +312,7 @@ class ContractViewSetTest(APITestCase):
       format='json'
     )
     self.assertEqual(contractApi.status_code, status.HTTP_200_OK)
-    self.assertEqual(len(contractApi.json()), 3)
+    self.assertEqual(len(contractApi.json()), 4)
 
   def test_create_contract(self):
     contractApi = self.client.post(
@@ -295,6 +321,14 @@ class ContractViewSetTest(APITestCase):
       format='json'
     )
     self.assertEqual(contractApi.status_code, status.HTTP_201_CREATED)
+
+  def test_create_contract_SameOriginAndDestination(self):
+    contractApi = self.client.post(
+      self.url_contract_list,
+      self.contractSameOriginAndDestination,
+      format='json'
+    )
+    self.assertEqual(contractApi.status_code, status.HTTP_400_BAD_REQUEST)
 
   def test_create_contractNegativeWeight(self):
     contractApi = self.client.post(
@@ -312,10 +346,18 @@ class ContractViewSetTest(APITestCase):
     )
     pilotAfterFullfill = Pilot.objects.get(pk=self.pilot.pk)
     self.assertEqual(
-      self.pilot.credits+self.contractAccepted.value, 
+      self.initialCredits+self.contractAccepted.value,
       pilotAfterFullfill.credits
     )
     self.assertEqual(contractApi.status_code, status.HTTP_202_ACCEPTED)
+
+  def test_fullfill_contract_pilot_different_originPlanet(self):
+    contractApi = self.client.patch(
+      self.url_contract_accepted_not_at_start_planet,
+      {},
+      format='json'
+    )
+    self.assertEqual(contractApi.status_code, status.HTTP_400_BAD_REQUEST)
 
   def test_fullfill_contract_concluded(self):
     contractApi = self.client.patch(
