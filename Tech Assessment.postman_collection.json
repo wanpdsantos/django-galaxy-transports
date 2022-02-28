@@ -1,0 +1,582 @@
+{
+	"info": {
+		"_postman_id": "9dc5f966-7175-43b8-998e-042335b9710b",
+		"name": "Tech Assessment",
+		"description": "Tech assessment for Codeminer42. API deployed with Python (DJANGO).",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "CONTRACT List all",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.environment.get(\"BASE_API_URL\");"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{BASE_API_URL}}contracts/",
+					"host": [
+						"{{BASE_API_URL}}contracts"
+					],
+					"path": [
+						""
+					]
+				},
+				"description": "This route list all contracts created including OPEN, ACCEPTED, and CONCLUDED."
+			},
+			"response": []
+		},
+		{
+			"name": "CONTRACT Fullfill",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.environment.get(\"contract_id\");",
+							"pm.environment.get(\"BASE_API_URL\");"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{BASE_API_URL}}contracts/{{contract_id}}/fullfill/",
+					"host": [
+						"{{BASE_API_URL}}contracts"
+					],
+					"path": [
+						"{{contract_id}}",
+						"fullfill",
+						""
+					]
+				},
+				"description": "This route will fulfill a contract accepted. After successfully fulfilled, the pilot location will change to the contract's destination and also the pilot credits will be updated according to the contract value.\n\nTo perform this operation the pilot related to the contract should be in the same planet as the contract's origin planet. Open contracts cannot be fulfilled. Concluded contracts cannot be fulfilled. If the pilot ship has not enough fuel to make the travel, the contract will no be fulfilled."
+			},
+			"response": []
+		},
+		{
+			"name": "CONTRACT Create new",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.environment.get(\"BASE_API_URL\");"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"description\": \"description3\",\n    \"originPlanet\": \"CALAS\",\n    \"destinationPlanet\": \"ANDVARI\",\n    \"value\": 15,\n    \"payload\": [\n        {\n            \"name\": \"FOOD\",\n            \"weight\": 20\n        },\n        {\n            \"name\": \"WATER\",\n            \"weight\": 10\n        }\n    ]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BASE_API_URL}}contracts/",
+					"host": [
+						"{{BASE_API_URL}}contracts"
+					],
+					"path": [
+						""
+					]
+				},
+				"description": "This route inserts a new contract to the system. New contracts will have the status OPEN. The items of the payload should have the weight specified in TONS."
+			},
+			"response": []
+		},
+		{
+			"name": "SHIP List all",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.environment.get(\"BASE_API_URL\");"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{BASE_API_URL}}ships",
+					"host": [
+						"{{BASE_API_URL}}ships"
+					]
+				},
+				"description": "This endpoint gets the list of all ships included in the system."
+			},
+			"response": []
+		},
+		{
+			"name": "SHIP Fuel",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.environment.get(\"ship_id\");",
+							"pm.environment.get(\"BASE_API_URL\");"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"quantity\": 10,\n    \"pilotCertification\": \"222\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BASE_API_URL}}ships/{{ship_id}}/fuel/",
+					"host": [
+						"{{BASE_API_URL}}ships"
+					],
+					"path": [
+						"{{ship_id}}",
+						"fuel",
+						""
+					]
+				},
+				"description": "This endpoint register a fuel request to a ship. It must send a body containing the desired fuel quantity and the pilot certification from who is fueling.\n\nIt will fail if the ship fuel max capacity is exceeded, or if the pilot does not have sufficient credits."
+			},
+			"response": []
+		},
+		{
+			"name": "SHIP Create new",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.environment.get(\"BASE_API_URL\");"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"fuelCapacity\": 100,\n    \"fuelLevel\": 50,\n    \"weightCapacity\": 100\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BASE_API_URL}}ships/",
+					"host": [
+						"{{BASE_API_URL}}ships"
+					],
+					"path": [
+						""
+					]
+				},
+				"description": "This endpoint register a new ship to the system. The attributes of the ship need to be sent on the request body."
+			},
+			"response": []
+		},
+		{
+			"name": "PILOT Accept Contract",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.environment.get(\"pilot_id\");",
+							"pm.environment.get(\"BASE_API_URL\");"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"contract_id\":43\n}"
+				},
+				"url": {
+					"raw": "{{BASE_API_URL}}pilots/{{pilot_id}}/contracts/",
+					"host": [
+						"{{BASE_API_URL}}pilots"
+					],
+					"path": [
+						"{{pilot_id}}",
+						"contracts",
+						""
+					]
+				},
+				"description": "This endpoint will accept an open contract and assign it to a pilot. The contract id need to be passed on the request body.\n\nAlready accepted or Concluded contracts cannot be accepted. Pilots with ship with weight capacity lower than total weight of the contract payload will not be able to accept the contract."
+			},
+			"response": []
+		},
+		{
+			"name": "PILOT Get all contracts",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.environment.get(\"BASE_API_URL\");"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{BASE_API_URL}}pilots/{{pilot_id}}/contracts/",
+					"host": [
+						"{{BASE_API_URL}}pilots"
+					],
+					"path": [
+						"{{pilot_id}}",
+						"contracts",
+						""
+					]
+				},
+				"description": "This endpoint list all contracts."
+			},
+			"response": []
+		},
+		{
+			"name": "PILOT Attach ship",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.environment.get(\"BASE_API_URL\");"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"ship_id\": 4\n}"
+				},
+				"url": {
+					"raw": "{{BASE_API_URL}}pilots/{{pilot_id}}/ships/",
+					"host": [
+						"{{BASE_API_URL}}pilots"
+					],
+					"path": [
+						"{{pilot_id}}",
+						"ships",
+						""
+					]
+				},
+				"description": "This endpoint attach a ship to a pilot. Notice that each pilot can have just one ship attached. Ship id need to be sent on request body."
+			},
+			"response": []
+		},
+		{
+			"name": "PILOT Create new",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.environment.get(\"BASE_API_URL\");"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"pilotCertification\": 777,\n    \"name\": \"Nando\",\n    \"age\": 20,\n    \"credits\": 100,\n    \"locationPlanet\": \"CALAS\"\n}"
+				},
+				"url": {
+					"raw": "{{BASE_API_URL}}pilots/",
+					"host": [
+						"{{BASE_API_URL}}pilots"
+					],
+					"path": [
+						""
+					]
+				},
+				"description": "This endpoint register a new pilot to the system. Pilots information need to be sent on the request body."
+			},
+			"response": []
+		},
+		{
+			"name": "PILOT Remove ship",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.environment.get(\"BASE_API_URL\");"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "{{BASE_API_URL}}pilots/{{pilot_id}}/ships/",
+					"host": [
+						"{{BASE_API_URL}}pilots"
+					],
+					"path": [
+						"{{pilot_id}}",
+						"ships",
+						""
+					]
+				},
+				"description": "This endpoint removes a ship from a pilot, this way the ship can be assigned to another pilot."
+			},
+			"response": []
+		},
+		{
+			"name": "PILOT Travel between planets",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.environment.get(\"pilot_id\");",
+							"pm.environment.get(\"BASE_API_URL\");"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "{{BASE_API_URL}}pilots/{{pilot_id}}/travels/?destination=CALAS",
+					"host": [
+						"{{BASE_API_URL}}pilots"
+					],
+					"path": [
+						"{{pilot_id}}",
+						"travels",
+						""
+					],
+					"query": [
+						{
+							"key": "destination",
+							"value": "CALAS"
+						}
+					]
+				},
+				"description": "This endpoint travels the pilot from one planet to another according to the travel rules and fuel required."
+			},
+			"response": []
+		},
+		{
+			"name": "REPORTS Total weight by planet",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.environment.get(\"BASE_API_URL\");"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{BASE_API_URL}}reports/totalweight",
+					"host": [
+						"{{BASE_API_URL}}reports"
+					],
+					"path": [
+						"totalweight"
+					]
+				},
+				"description": "Get the report for the total weight in tons of each resource sent and received by each planet. This only considers concluded contracts."
+			},
+			"response": []
+		},
+		{
+			"name": "REPORTS Pilot resources transported",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.environment.get(\"BASE_API_URL\");"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{BASE_API_URL}}reports/pilotresourcetransported",
+					"host": [
+						"{{BASE_API_URL}}reports"
+					],
+					"path": [
+						"pilotresourcetransported"
+					]
+				},
+				"description": "Get the report for the total weight in tons of each resource sent and received by each planet. This only considers concluded contracts."
+			},
+			"response": []
+		},
+		{
+			"name": "REPORTS Latest transactions",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{BASE_API_URL}}transactions",
+					"host": [
+						"{{BASE_API_URL}}transactions"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
