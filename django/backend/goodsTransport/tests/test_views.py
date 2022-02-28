@@ -397,7 +397,18 @@ class ReportTotalWeightViewTest(APITestCase):
   def setUp(self):
     self.url = reverse('ReportTotalWeightByPlanet')
   
-  def test_report(self):
+  def test_report_total_weight_by_planet(self):
+    reportApi = self.client.get(
+      self.url,
+      format='json'
+    )
+    self.assertEqual(reportApi.status_code, status.HTTP_200_OK)
+  
+class ReportPilotResourcesTrasportedViewTest(APITestCase):
+  def setUp(self):
+    self.url = reverse('PilotResourceTransported')
+  
+  def test_report_pilot_resources_transported(self):
     reportApi = self.client.get(
       self.url,
       format='json'

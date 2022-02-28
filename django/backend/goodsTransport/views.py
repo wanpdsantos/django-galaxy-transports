@@ -3,8 +3,8 @@ from django.shortcuts import get_object_or_404
 from goodsTransport.serializers import PilotSerializer, ShipSerializer, \
   ContractSerializer, ResourceSerializer, ResourceListSerializer
 from goodsTransport.models import Pilot, Ship, Contract, ResourceList, Resource
-from goodsTransport.constants import FUEL_COST_PER_UNITY, ROUTES, PLANETS, RESOURCES
-from goodsTransport.functions import totalWeightReportReducer
+from goodsTransport.constants import FUEL_COST_PER_UNITY, ROUTES, PLANETS, RESOURCES, DECIMAL_PLACES
+from goodsTransport.functions import totalWeightReportReducer, pilotResourceTransportedReportReducer
 from rest_framework import viewsets, serializers, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -295,4 +295,20 @@ class ReportTotalWeightByPlanetView(APIView):
     initReducer = {planet:{'sent':resourceDict,'received':resourceDict} for planet in PLANETS}
     reducer = reduce(totalWeightReportReducer, json.loads(contractsConcluded),initReducer)
   
+    return Response(reducer, status = status.HTTP_200_OK)
+
+class ReportPilotResourcesTrasportedView(APIView):
+  def get(self, request):
+    queryset = Contract.objects.filter(status='CONCLUDED')
+    serializer = ContractSerializer(queryset, many=True, context={'request': request})
+    renderer = JSONRenderer()
+    contractsConcluded = renderer.render(serializer.data)
+    reducer = reduce(pilotResourceTransportedReportReducer, json.loads(contractsConcluded),{})
+
+    for pilot in reducer:
+      total = reducer[pilot]['FOOD'] + reducer[pilot]['MINERALS'] + reducer[pilot]['WATER']
+      reducer[pilot]['FOOD'] = round((reducer[pilot]['FOOD']/total)*100,DECIMAL_PLACES)
+      reducer[pilot]['MINERALS'] = round((reducer[pilot]['MINERALS']/total)*100,DECIMAL_PLACES)
+      reducer[pilot]['WATER'] = round((reducer[pilot]['WATER']/total)*100,DECIMAL_PLACES)
+
     return Response(reducer, status = status.HTTP_200_OK)
