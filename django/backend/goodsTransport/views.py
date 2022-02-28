@@ -1,11 +1,17 @@
 from django.urls import reverse
 from django.shortcuts import get_object_or_404
-from goodsTransport.serializers import PilotSerializer, ShipSerializer, ContractSerializer, ResourceSerializer, ResourceListSerializer
+from goodsTransport.serializers import PilotSerializer, ShipSerializer, \
+  ContractSerializer, ResourceSerializer, ResourceListSerializer
 from goodsTransport.models import Pilot, Ship, Contract, ResourceList, Resource
-from goodsTransport.constants import FUEL_COST_PER_UNITY, ROUTES
+from goodsTransport.constants import FUEL_COST_PER_UNITY, ROUTES, PLANETS, RESOURCES
+from goodsTransport.functions import totalWeightReportReducer
 from rest_framework import viewsets, serializers, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
+from rest_framework.views import APIView
+from rest_framework.renderers import JSONRenderer
+from functools import reduce
+import json
 
 class PilotViewSet(viewsets.ModelViewSet):
   queryset = Pilot.objects.all()
@@ -277,3 +283,16 @@ class ContractViewSet(viewsets.ModelViewSet):
       return Response(e.args, status = status.HTTP_400_BAD_REQUEST)
 
     return Response(serializerContract.data, status = status.HTTP_202_ACCEPTED)
+
+class ReportTotalWeightByPlanetView(APIView):
+  def get(self, request):
+    queryset = Contract.objects.filter(status='CONCLUDED')
+    serializer = ContractSerializer(queryset, many=True, context={'request': request})
+    renderer = JSONRenderer()
+    contractsConcluded = renderer.render(serializer.data)
+    
+    resourceDict = { resource:0 for resource in RESOURCES }
+    initReducer = {planet:{'sent':resourceDict,'received':resourceDict} for planet in PLANETS}
+    reducer = reduce(totalWeightReportReducer, json.loads(contractsConcluded),initReducer)
+  
+    return Response(reducer, status = status.HTTP_200_OK)

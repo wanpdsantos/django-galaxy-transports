@@ -19,7 +19,7 @@ class PilotViewSetTest(APITestCase):
     self.pilotCalasShipLowFuel = PilotFactory(locationPlanet='CALAS', ship=self.shipLowFuel)
     self.pilotCalasShipLowWeightCapacity = PilotFactory(locationPlanet='CALAS', ship=self.shipLowCapacity)
     resourceList = ResourceListFactory()
-    payload = ResourceFactory(list=resourceList)
+    ResourceFactory(list=resourceList)
     self.contract = ContractFactory(status='OPEN', payload=resourceList)
     self.contractAlreadyAccepted = ContractFactory(status='ACCEPTED', payload=resourceList, pilot=self.pilotAqua)
     self.contractGreaterWeight = ContractFactory(
@@ -392,3 +392,14 @@ class ContractViewSetTest(APITestCase):
       format='json'
     )
     self.assertEqual(contractApi.status_code, status.HTTP_400_BAD_REQUEST)
+
+class ReportTotalWeightViewTest(APITestCase):
+  def setUp(self):
+    self.url = reverse('ReportTotalWeightByPlanet')
+  
+  def test_report(self):
+    reportApi = self.client.get(
+      self.url,
+      format='json'
+    )
+    self.assertEqual(reportApi.status_code, status.HTTP_200_OK)

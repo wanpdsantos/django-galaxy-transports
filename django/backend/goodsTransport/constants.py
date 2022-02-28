@@ -1,10 +1,16 @@
 FUEL_COST_PER_UNITY = 7
 
 PLANETS = [
-  ('ANDVARI','Andvari'),
-  ('AQUA','Aqua'),
-  ('CALAS','Calas'),
-  ('DEMETER','Demeter'),
+  'ANDVARI',
+  'AQUA',
+  'CALAS',
+  'DEMETER',
+]
+
+RESOURCES = [
+  'FOOD', 
+  'MINERALS', 
+  'WATER'
 ]
 
 ROUTES = {

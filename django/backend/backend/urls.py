@@ -13,4 +13,5 @@ router.register(r'resourcelists', ResourceListViewSet, basename='resourcelist')
 urlpatterns = [
     path('', include(router.urls)),
     path('admin/', admin.site.urls),
+    path('', include('goodsTransport.urls'))
 ]
