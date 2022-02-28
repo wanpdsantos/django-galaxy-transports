@@ -43,3 +43,11 @@ class ContractTest(TestCase):
   def test_newContract(self):
     self.assertIsInstance(self.contract, Contract)
     self.assertTrue(Contract.objects.all().count() == 1)
+
+class TransctionTest(TestCase):
+  def setUp(self):
+    self.transaction = TransactionFactory()
+    
+  def test_newTransaction(self):
+    self.assertIsInstance(self.transaction, Transaction)
+    self.assertTrue(Transaction.objects.all().count() == 1)

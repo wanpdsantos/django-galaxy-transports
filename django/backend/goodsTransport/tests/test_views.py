@@ -3,7 +3,7 @@ from goodsTransport.tests.factories import PilotFactory, \
 ShipFactory, ContractFactory, ResourceListFactory, ResourceFactory
 from rest_framework import status
 from rest_framework.test import APITestCase
-from goodsTransport.models import Ship, ResourceList, Pilot
+from goodsTransport.models import Ship, ResourceList, Pilot, Transaction
 from goodsTransport.constants import FUEL_COST_PER_UNITY, ROUTES
 
 class PilotViewSetTest(APITestCase):
@@ -414,3 +414,31 @@ class ReportPilotResourcesTrasportedViewTest(APITestCase):
       format='json'
     )
     self.assertEqual(reportApi.status_code, status.HTTP_200_OK)
+
+class TransactionViewSetTest(APITestCase):
+  def setUp(self):
+    self.ship = Ship.objects.create(
+      fuelCapacity = 200,
+      fuelLevel = 10,
+      weightCapacity = 20,
+    )
+    self.pilot = PilotFactory(credits = 100)
+    self.fuelGood = {
+      'quantity': 1,
+      'pilotCertification': self.pilot.pilotCertification
+    }
+    self.url_transaction_list = reverse('transaction-list')
+    self.url_ship_fuel = reverse('ship-fuel', args=[self.ship.pk])
+
+  def test_transaction_log_fuel(self):
+    shipApi = self.client.patch(
+      self.url_ship_fuel,
+      self.fuelGood,
+      format='json'
+    )
+    transactionApi = self.client.get(
+      self.url_transaction_list,
+      format='json'
+    )
+    self.assertEqual(len(transactionApi.json()), 1)
+    self.assertEqual(transactionApi.status_code, status.HTTP_200_OK)

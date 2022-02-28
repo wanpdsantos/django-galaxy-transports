@@ -1,6 +1,6 @@
 from django.urls import reverse
 from django.db.models import Sum
-from goodsTransport.models import Pilot, Ship, Contract, Resource, ResourceList
+from goodsTransport.models import Pilot, Ship, Contract, Resource, ResourceList, Transaction
 from rest_framework import serializers
 from goodsTransport.constants import ROUTES
 
@@ -114,3 +114,8 @@ class ContractSerializer(serializers.HyperlinkedModelSerializer):
         raise serializers.ValidationError('Pilot shoud be at contract origin planet to start the travel.')
 
     return super(ContractSerializer, self).update(instance, validated_data)
+
+class TransactionSerializer(serializers.HyperlinkedModelSerializer):
+  class Meta:
+    model = Transaction
+    fields = ['description']

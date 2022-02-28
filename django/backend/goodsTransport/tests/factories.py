@@ -26,7 +26,7 @@ class ResourceFactory(factory.django.DjangoModelFactory):
   class Meta:
     model = Resource
   
-  name='Food'
+  name='FOOD'
   weight=10.59
 
 class ContractFactory(factory.django.DjangoModelFactory):
@@ -36,3 +36,9 @@ class ContractFactory(factory.django.DjangoModelFactory):
   originPlanet = 'CALAS'
   destinationPlanet = 'ANDVARI'
   value = 15.5
+
+class TransactionFactory(factory.django.DjangoModelFactory):
+  class Meta:
+    model = Transaction
+
+  description = factory.Faker("sentence")

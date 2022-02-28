@@ -1,10 +1,11 @@
 from django.urls import reverse
 from django.shortcuts import get_object_or_404
 from goodsTransport.serializers import PilotSerializer, ShipSerializer, \
-  ContractSerializer, ResourceSerializer, ResourceListSerializer
-from goodsTransport.models import Pilot, Ship, Contract, ResourceList, Resource
+  ContractSerializer, ResourceSerializer, ResourceListSerializer, TransactionSerializer
+from goodsTransport.models import Pilot, Ship, Contract, ResourceList, Resource, Transaction
 from goodsTransport.constants import FUEL_COST_PER_UNITY, ROUTES, PLANETS, RESOURCES, DECIMAL_PLACES
-from goodsTransport.functions import totalWeightReportReducer, pilotResourceTransportedReportReducer
+from goodsTransport.functions import totalWeightReportReducer, \
+  pilotResourceTransportedReportReducer, logTransaction
 from rest_framework import viewsets, serializers, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -39,6 +40,7 @@ class PilotViewSet(viewsets.ModelViewSet):
     )
     serializerShip.is_valid(raise_exception=True)
     serializerShip.save()
+    logTransaction(self.request, f"{pilot.name} traveled from {origin} to {destination}.")
     return serializer.data
 
   @action(detail = True, methods = ['PATCH'])
@@ -62,8 +64,9 @@ class PilotViewSet(viewsets.ModelViewSet):
   def attach_ship_to_pilot(self):
     queryset = Ship.objects.all()
     ship = get_object_or_404(queryset, id = self.request.data.get('ship_id'))
+    pilot = self.get_object()
     serializer = self.serializer_class(
-      self.get_object(), 
+      pilot, 
       data={'ship':reverse("ship-detail", args=[ship.id])}, 
       partial=True,
       context={'request': self.request}
@@ -73,8 +76,10 @@ class PilotViewSet(viewsets.ModelViewSet):
     return serializer.data
 
   def remove_ship_from_pilot(self):
+    pilot = self.get_object()
+    shipId = pilot.ship
     serializer = self.serializer_class(
-      self.get_object(), 
+      pilot, 
       data={'ship': None}, 
       partial=True,
       context={'request': self.request}
@@ -120,6 +125,7 @@ class PilotViewSet(viewsets.ModelViewSet):
     )
     serializer.is_valid(raise_exception=True)
     serializer.save()
+    logTransaction(self.request, f"{self.get_object().name} accepted contract: {contract.description}.")
     return serializer.data
 
   @action(detail = True, methods = ['GET','POST'])
@@ -147,9 +153,10 @@ class ShipViewSet(viewsets.ModelViewSet):
   def fuel(self, request, *args, **kwargs):
     queryset = Pilot.objects.all()
     pilot = get_object_or_404(queryset, pilotCertification = request.data.get('pilotCertification'))
+    debit = request.data.get('quantity')*FUEL_COST_PER_UNITY
     serializer = PilotSerializer(
       pilot, 
-      data={'credits': pilot.credits-request.data.get('quantity')*FUEL_COST_PER_UNITY}, 
+      data={'credits': pilot.credits-debit}, 
       partial=True,
       context={'request': request}
     )
@@ -168,6 +175,7 @@ class ShipViewSet(viewsets.ModelViewSet):
       )
       serializer.is_valid(raise_exception=True)
       serializer.save()
+      logTransaction(self.request, f"{pilot.name} bought fuel: - ₭{debit}")
     except serializers.ValidationError:
       serializerRollBack = PilotSerializer(
         pilot, 
@@ -262,6 +270,7 @@ class ContractViewSet(viewsets.ModelViewSet):
         partial=True,
         context={'request': request}
       )
+      logTransaction(self.request, f"{contract.description} paid: + ₭{contract.value}.")
     except Exception as e:
       serializerRollback = ContractSerializer(
         contract, 
@@ -294,7 +303,7 @@ class ReportTotalWeightByPlanetView(APIView):
     resourceDict = { resource:0 for resource in RESOURCES }
     initReducer = {planet:{'sent':resourceDict,'received':resourceDict} for planet in PLANETS}
     reducer = reduce(totalWeightReportReducer, json.loads(contractsConcluded),initReducer)
-  
+
     return Response(reducer, status = status.HTTP_200_OK)
 
 class ReportPilotResourcesTrasportedView(APIView):
@@ -312,3 +321,7 @@ class ReportPilotResourcesTrasportedView(APIView):
       reducer[pilot]['WATER'] = round((reducer[pilot]['WATER']/total)*100,DECIMAL_PLACES)
 
     return Response(reducer, status = status.HTTP_200_OK)
+
+class TransactionViewSet(viewsets.ModelViewSet):
+  queryset = Transaction.objects.all().order_by('-created_at')
+  serializer_class = TransactionSerializer

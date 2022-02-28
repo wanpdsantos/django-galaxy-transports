@@ -39,6 +39,10 @@ class Contract(models.Model):
   status = models.CharField(choices=STATUS, max_length=10, blank=False, null=False)
   pilot = models.ForeignKey(Pilot, on_delete=models.DO_NOTHING, blank=True, null=True)
 
+class Transaction(models.Model):
+  description = models.CharField(max_length=200, blank=True, null=True)
+  created_at = models.DateTimeField(auto_now_add=True)
+
 
 
 
